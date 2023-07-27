@@ -1,0 +1,29 @@
+name : Persistence
+description :
+  - Case1.1 - Monitoring Task schedules
+  - Case1.2 - Monitoring Task schedules with NT AUTHORITY/SYSTEM (local SYSTEM) privileges
+  - Case2.1 - Monitoring Services
+  - Case2.2 - Monitoring Services with NT AUTHORITY/SYSTEM (local SYSTEM) privileges
+  - Case3.0 - Monitoring SSH connection 
+  - Case4.0 - Monitoring Run and RunOnce Registry Keys 
+  - https://www.microsoft.com/en-us/security/blog/2022/10/18/defenders-beware-a-case-for-post-ransomware-investigations/
+  - https://attack.mitre.org/techniques/T1053/005/
+  - https://learn.microsoft.com/en-us/windows-server/administration/openssh/openssh_overview
+  - https://learn.microsoft.com/en-us/windows/win32/setupapi/run-and-runonce-registry-keys
+table : 
+  - DeviceProcessEvents
+  - https://learn.microsoft.com/en-us/microsoft-365/security/defender/advanced-hunting-DeviceProcessEvents-table?view=o365-worldwide
+query : |
+  //Case1.1 - Monitoring task schedules
+  let StartTime = datetime(2023-01-10);
+  let EndTime = datetime(2023-01-20);
+  DeviceProcessEvents
+  | where Timestamp between ((StartTime) .. (EndTime))
+  | where FileName == "schtasks.exe"
+  | where ProcessCommandLine has_any ("/run", "/create")
+  | where FolderPath has_any 
+      (@"C:\ProgramData\", 
+       @"C:\Windows\Temp\",
+       @"C:\Windows\",
+       @"C:\Temp\")
+  | project Timestamp, DeviceId, DeviceName, FileName, FolderPath, ProcessCommandLine
