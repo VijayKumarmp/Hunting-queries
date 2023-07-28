@@ -1,0 +1,23 @@
+name : MDE Tamper Protection
+source : https://github.com/LearningKijo/KQL/blob/main/KQL-Effective-Use/02-kql-MDE-TamperProtection.md
+query: |
+    //Counts how many times 'TamperingAttempt' happened to each device.
+    DeviceEvents
+    | where Timestamp > ago(30d)
+    | where ActionType == "TamperingAttempt"
+    | summarize TamperingAttempt = count() by DeviceId, DeviceName
+
+
+    //Counts how many times 'TamperingAttempt' occurred and indicates which registry value impacted each device.
+    DeviceEvents
+    | where Timestamp > ago(30d)
+    | where ActionType == "TamperingAttempt"
+    | summarize Registry_Value = make_list(RegistryValueName) by DeviceId, DeviceName
+
+
+    //Hunt for registry key activities for Microsoft Defender Antivirus.
+    DeviceRegistryEvents
+    | where Timestamp > ago(30d)
+    | where RegistryKey has @"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender"
+    | project-reorder Timestamp, DeviceId, DeviceName, ActionType, RegistryKey, RegistryValueType, RegistryValueName, RegistryValueData
+    | sort by Timestamp desc 
